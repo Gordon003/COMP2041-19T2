@@ -1,0 +1,49 @@
+#!/bin/dash
+
+# Find version number
+version=`cat .legit/log | wc -l`
+currentVer=$(( version - 1 ))
+cont=1
+
+# Check how many files in index and latest version
+if [ "$currentVer" -ge "0" ]
+then
+    indexCount=`ls .legit/index | wc -l`
+    latestCount=`ls .legit/version-$currentVer | wc -l`
+    
+    # If equal, check if files have been edited or not
+    if [ "$indexCount" -eq "$latestCount" ]
+    then
+        cont=$(( 0 ))
+        for file in `ls .legit/index`
+        do
+            # diff=1 -> Files are different
+            # diff=0 -> Files are the same
+            diff=`diff -q .legit/index/$file .legit/version-$currentVer/$file | wc -l`
+            if [ "$cont" -eq "0" ] && [ "$diff" -eq "1" ]
+            then
+                cont=$((cont+1))
+            fi
+        done
+    fi
+fi
+
+if [ "$cont" -eq "0" ]
+then
+    echo "nothing to commit"
+    exit 1
+fi
+
+# Append to log text
+echo "$version $2" >> .legit/log
+
+# Make new directory
+mkdir ".legit/version-$version"
+
+# Commit all files in index
+for file in `ls .legit/index`
+do
+    cp ".legit/index/$file" ".legit/version-$version/$file"
+done
+
+echo "Committed as commit $version"

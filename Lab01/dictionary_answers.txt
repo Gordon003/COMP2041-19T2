@@ -35,3 +35,4 @@ and no other vowels.
 
 Q5 answer: egrep -i "^[^eiou]*a[^aeiou]*e[^aeiou]*i[^aeiou]*o[^aeiou]*u[^aeiou]*$" dictionary.txt
 
+

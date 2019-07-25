@@ -1,0 +1,14 @@
+body {
+	background-color: yellow;
+  	text-align: center;
+} 
+
+h1 {
+	font-family: Arial, Helvetica, sans-serif;
+	color: red;
+}
+
+img {
+	border: 10px solid transparent;
+	border-color: blue;
+}

@@ -1,0 +1,19 @@
+        Date        |   	Start       |       Stop        |       Activity        |       Comments
+        
+      2/7/2019             7:30pm              9:30pm               Reading             Read the key concept of each function 
+                                                                                        I need to implement in subset 0 and 1
+                                                                                        
+      4/7/2019             4:30pm              6:30pm               Coding              Implemented basic coding functionality for subset 0
+      
+      6/7/2019             4:30pm              7:30pm               Coding              Implemented basic coding functionality for subset 1
+                                                                    Debugging           Improved coding function and remove bugs in subset 0
+                                                                    
+     11/7/2019             9:00am              12:00pm              Fixing              Fixing up code for Subset 0 and 1
+                                                                    Testing             Found and fix up old bug in subset 1
+                                                                    Debugging           Write 10 test scripts                                       
+                                                                    
+     12/7/2019             1:30pm              3:30pm               Commenting          Improved commenting on all files
+                                                                    Updating            Improvised test scripts     
+                                                                    
+     13/7/2019             7:30pm              10:00pm               Coding              Attempt to do subset 3 (only pass the first two test which are
+                                                                                           branch and checkout )

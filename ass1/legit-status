@@ -1,0 +1,94 @@
+#!/bin/dash
+
+# Get latest version
+version=`cat .legit/log | wc -l`
+currentVer=$(( version - 1 ))
+
+# Get all file in this directory & its subfolder
+for file in `find . -type f | rev | cut -d'/' -f 1 | rev | sort | uniq`
+do  
+
+    # If log or status, ignore it
+    if [ "$file" = "log" ] || [ "$file" = "status" ]
+    then
+        continue
+    fi
+
+    # If legit file, note "untracked"
+    if [ "$file" = "legit-init" ] || [ "$file" = "legit-add" ] || [ "$file" = "legit-commit" ] || [ "$file" = "legit-log" ] || [ "$file" = "legit-show" ] || [ "$file" = "legit-rm" ] || [ "$file" = "legit-status" ]
+    then
+        echo "$file - untracked"
+        continue
+    fi
+    
+    # Link to file in index and latest repo
+    indexFile=".legit/index/$file"
+    latestFile=".legit/version-$currentVer/$file"
+    
+    # If file not in working, index or repo, ignore it
+    if [ ! -f "$file" ] && [ ! -f "$indexFile" ] && [ ! -f "$latestFile" ]
+    then
+        continue
+    fi
+    
+    # If file exists on current directory
+    if [ -f "$file" ] && [ ! -f $indexFile ]
+    then
+        echo "$file - untracked"
+        continue
+    fi
+    
+    # If file exists on all 3
+    if [ -f "$file" ] && [ -f $indexFile ] && [ -f $latestFile ]
+    then
+    
+        # Check for diff between file in working and index directory
+        diff=`diff -q $file $indexFile | wc -l`
+        # Check for diff between file in index and repo directory
+        diff2=`diff -q $latestFile $indexFile | wc -l`
+        
+        # Diff between working and index
+        if [ "$diff" -eq "1" ]
+        then
+        
+            if [ "$diff2" -eq "0" ]
+            then
+                 echo "$file - file changed, changes not staged for commit"
+            else
+                 echo "$file - file changed, different changes staged for commit"
+            fi
+            continue
+            
+        else
+        
+            if [ "$diff2" -eq "0" ]
+            then
+                echo "$file - same as repo"
+            else
+                echo "$file - file changed, changes staged for commit"
+            fi
+            continue
+            
+        fi
+    fi
+    
+    # Just added to index
+    if [ -f "$file" ] && [ -f "$indexFile" ] && [ ! -f "$latestFile" ]
+    then
+        echo "$file - added to index"
+        continue
+    fi
+    
+    # Deleted Case
+    if [ ! -f "$file" ]
+    then
+        if [ ! -f "$indexFile" ]
+        then
+            echo "$file - deleted"
+        else
+            echo "$file - file deleted"
+        fi
+        continue
+    fi
+   
+done

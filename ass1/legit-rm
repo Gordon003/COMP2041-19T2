@@ -1,0 +1,163 @@
+#!/bin/dash
+
+# Command Option
+CACHED=0
+FORCE=0
+
+# Get latest version
+version=`cat .legit/log | wc -l`
+currentVer=$(( version - 1 ))
+
+# Check all file
+for file in "$@"
+do  
+
+    # Cached
+    if [ "$file" = "--cached" ]
+    then
+        CACHED=$((CACHED+1))
+        continue
+    fi
+
+    # Forced
+    if [ "$file" = "--force" ]
+    then
+        FORCE=$((FORCE+1))
+        continue
+    fi
+    
+    # Link to file in both index and repo
+    indexFile=".legit/index/$file"
+    repoFile=".legit/version-$currentVer/$file"
+    
+    : '
+    FILE COMPARE
+        diff1 - Working File vs Index File
+        diff2 - Working File vs Repo File
+        diff3 - Index File vs Repo File
+    '
+    diff1=2
+    diff2=2
+    diff3=2
+    
+    # If no working file
+    if [ -f $indexFile ] && [ -f $repoFile ]
+    then
+        diff3=`diff -q $indexFile $repoFile | wc -l`
+    fi
+    
+    # If no index file
+    if [ -f $file ] && [ -f $repoFile ]
+    then
+        diff2=`diff -q $file $repoFile | wc -l`
+    fi
+    
+    # If no Repo file
+    if [ -f $file ] && [ -f $indexFile ]
+    then
+        diff1=`diff -q $file $indexFile | wc -l`
+    fi
+    
+    # Not Cached
+    if [ "$CACHED" -eq "0" ]
+    then
+    
+        # Not cached but forced
+        if [ "$FORCE" -eq "1" ]
+        then
+        
+            # File doesn't exist in working and index directory
+            if [ -f $file ] && [ ! -f $indexFile ]
+            then
+                echo "legit-rm: error: '$file' is not in the legit repository"
+                exit 1
+            fi
+            
+            continue
+            
+        fi
+    
+        # No Repository file
+        if [ ! -f $repoFile ]
+        then
+        
+            # Index File
+            if [ -f $indexFile ]
+            then
+                echo "legit-rm: error: '$file' has changes staged in the index"
+            else
+                echo "legit-rm: error: '$file' is not in the legit repository"
+            fi
+            exit 1
+            
+        fi
+    
+        # Not Forced && [Working File != Repo File] && [Working File == Repo File]
+        if [ "$FORCE" -eq "0" ] && [ "$diff2" -ne "0" ] && [ "$diff3" -eq "0" ]
+        then
+            echo "legit-rm: error: '$file' in repository is different to working file"
+            exit 1
+        fi
+        
+        # [Working File != Index File] && [Working File != Repo File]
+        if [ "$diff1" -ne "0" ] && [ "$diff2" -ne "0" ]
+        then
+            echo "legit-rm: error: '$file' in index is different to both working file and repository"
+            exit 1
+        fi
+        
+        # [Index File != Repo File]
+        if [ "$diff3" -ne "0" ]
+        then
+            echo "legit-rm: error: '$file' has changes staged in the index"
+            exit 1
+        fi
+        
+    # Cached
+    else
+    
+        # Cached and Forced
+        if [ "$FORCE" -eq "1" ]
+        then
+            continue
+        fi
+    
+        # File not in index or repo folder
+        if [ -f $file ] && [ ! -f $indexFile ] && [ ! -f $repoFile ]
+        then
+            echo "legit-rm: error: '$file' is not in the legit repository"
+            exit 1
+        fi
+    
+        # [Index File != Working File] AND [Index File != Repo File]
+        if [ "$diff1" -ne "0" ] && [ "$diff3" -ne "0" ]
+        then
+            echo "legit-rm: error: '$file' in index is different to both working file and repository"
+            exit 1
+        fi
+        
+    fi
+       
+done
+
+
+# Remove file in argument
+for file in "$@"
+do  
+
+    # If cached or force word, ignore it
+    if [ "$file" = "--cached" ] || [ "$file" = "--force" ]
+    then
+        continue
+    fi
+
+    # Remove file in index
+    rm ".legit/index/$file"
+    
+    # Remove file if not cached
+    if [ "$CACHED" -eq "0" ]
+    then
+        rm $file
+    fi
+    
+done

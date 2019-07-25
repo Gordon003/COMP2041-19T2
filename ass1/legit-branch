@@ -1,0 +1,81 @@
+#!/usr/bin/perl -w
+
+# Check branch status
+if ( $#ARGV == -1 ){
+
+    # Get status
+    @list = `cat .legit/status | cut -d '-' -f 1 | sort`;
+    
+    if ($#list == -1){
+        print "legit-branch: error: your repository does not have any commits yet\n";
+        exit 1;
+    }else{
+        print join("", @list);
+        exit 0;
+    }
+  
+}
+
+# Add new branch
+if ( $#ARGV == 0 ){
+
+    # If master, terminate early
+    if ($ARGV[0] eq "master" ){
+        print "legit-branch: error: branch 'master' already exists\n";
+        exit 1;
+    }
+
+    # Get latest version
+    $latestVersion = `cat .legit/status | grep "Current" | cut -d '=' -f1 | cut -d '-' -f2`;
+    chomp $latestVersion;
+
+    # Open status log
+    open F, '>>'.".legit/status" or die;
+    print F "$ARGV[0]-$latestVersion\n";
+    
+    # Make new branch folder
+    mkdir ".legit/$ARGV[0]";
+    
+    # Add files to branch from latest version
+    @files = `ls .legit/version-$latestVersion`;
+    foreach $file (@files){
+        chomp $file;
+        `cp  -r ".legit/version-$latestVersion/$file" ".legit/$ARGV[0]"`;   
+    }
+    
+    close F;
+    exit 0;
+}
+
+# Delete Branch
+if ( $#ARGV == 1 ){
+
+    # If master, terminate early
+    if ($ARGV[1] eq "master") {
+        print "legit-branch: error: can not delete branch 'master'\n";
+        exit 1;
+    }
+    
+    # Find if branch exist
+    @list = `cat .legit/status | cut -d '-' -f 1 | grep "$ARGV[1]"`;
+    if ( $#list == -1 ){
+        print "legit-branch: error: branch '$ARGV[1]' does not exist\n";
+        exit 1;
+    }
+    
+    # Remove file from status
+    @files = `cat .legit/status | cut -d '-' -f 1 | grep -v "$ARGV[1]"`;
+    open F, '>'.".legit/status" or die;
+    
+    `rm -rf .legit/$ARGV[1]`;
+    
+    foreach $file (@files){
+        chomp $file; 
+        print F "$file\n";    
+    }
+    
+    close F;
+    print "Deleted branch '$ARGV[1]'\n";
+    exit 0;
+}
+

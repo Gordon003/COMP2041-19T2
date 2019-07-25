@@ -1,0 +1,38 @@
+#!/bin/dash
+
+# Get commit number and file name from argument
+commitNum=${1%:*}
+fileName=${1#*:}
+
+# If there is no commit number
+if [ -z $commitNum ]
+then
+
+    # Check if that file exist in index
+    if [ -f ".legit/index/$fileName" ]
+    then
+        cat ".legit/index/$fileName"
+    else
+        echo "legit-show: error: '$fileName' not found in index"
+        exit 1
+    fi
+
+# Else (there is commit number)
+else
+
+    # Case 1 - Can't find Commit
+    if [ ! -d ".legit/version-$commitNum" ]
+    then
+        echo "legit-show: error: unknown commit '$commitNum'"
+        exit 1
+    # Case 2 - Can't find file in commit
+    elif [ ! -f ".legit/version-$commitNum/$fileName" ]
+    then
+        echo "legit-show: error: '$fileName' not found in commit $commitNum"
+        exit 1
+    fi
+        
+    # If file in commit exists, show file
+    cat ".legit/version-$commitNum/$fileName"
+    
+fi

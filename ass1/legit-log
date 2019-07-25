@@ -1,0 +1,5 @@
+#!/bin/dash
+
+# Get log file
+# Display in reverse order 
+cat .legit/log | sort -nr

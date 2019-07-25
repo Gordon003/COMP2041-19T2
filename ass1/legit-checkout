@@ -1,0 +1,65 @@
+#!/usr/bin/perl -w
+
+# Check if list exist
+$count = `cat .legit/status | grep "^$ARGV[0]-" | wc -l`;
+if ( $count != 1 ){
+    print "legit-checkout: error: unknown branch '$ARGV[0]'\n";
+    exit 1;
+}
+
+# Delete from previous branch
+$list2 = `cat .legit/status | grep "Current" | cut -d '=' -f1 | cut -d '-' -f1`;
+
+# If master, check from latest version
+if ($list2 eq "master\n"){
+    $ver = `cat .legit/status | grep "Current" | cut -d '=' -f1 | cut -d '-' -f2`;
+    $path = ".legit/version-$ver";
+}else{
+    $path = ".legit/$list2";
+}
+
+# Get list and delete file accordingly
+@fullList = `ls $path`;
+foreach $file (@fullList){
+    chomp $file;
+    `rm -f $file`;
+}
+
+# Update status log
+@list = `cat .legit/status | cut -d '=' -f 1`;
+open F, '>'.".legit/status" or die;
+foreach $file (@list){
+    chomp $file;
+    if (index($file, $ARGV[0]) != -1){
+        print F "$file=Current\n";
+    }else{
+        print F "$file\n";
+    }
+}
+close F;
+
+# Get new version of file
+# Upload it to working directory
+if ( -d ".legit/$ARGV[0]" ){
+    @files = `ls .legit/$ARGV[0]`;
+}else{
+    $newVersion = `cat .legit/status | grep "$ARGV[0]" | cut -d '-' -f2 | cut -d '=' -f1`;
+    chomp $newVersion;
+    @files = `ls .legit/version-$newVersion`;
+}
+
+foreach $file (@files){
+    chomp $file;
+    if ( -d ".legit/$ARGV[0]" ) {
+        if ( -f ".legit/$ARGV[0]/$file"){
+            `cp  -r .legit/$ARGV[0]/$file $file`;
+        }
+    }else{
+        if ( -f ".legit/version-0/$file"){
+            `cp  -r .legit/version-0/$file $file`;
+        }
+    }
+}
+
+# Output to user
+print "Switched to branch '$ARGV[0]'\n";

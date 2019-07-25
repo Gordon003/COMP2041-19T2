@@ -1,0 +1,108 @@
+#!/bin/dash
+
+# Get latest version
+newVersion=`cat .legit/log | wc -l`
+currentVer=$(( newVersion - 1 ))
+
+# Copy all file in index directory from working to index directory [-a]
+if [ "$#" -eq "3" ] && [ "$1" = "-a" ]
+then
+    for file in `ls .legit/index`
+    do
+        if [ ! -f "$file" ]
+        then
+            rm ".legit/index/$file"
+        else
+            cp "$file" ".legit/index/$file"
+        fi
+    done
+fi
+
+# Check how many files in index and latest version
+#   (If there is previous commit made before)
+if [ "$currentVer" -ge "0" ]
+then
+    
+    # Count # of files in both index and latest version directory
+    indexCount=`ls .legit/index | wc -l`
+    latestCount=`ls .legit/version-$currentVer | wc -l`
+    
+    # If equal # of files in both directory, check all files are different
+    #   If different, DIFFinue to commit
+    #   Else, terminate early
+    if [ "$indexCount" -eq "$latestCount" ]
+    then
+        
+        # Indicate if there is a change in any file
+        #   0 - No file changes
+        #   1 - At least 1 file changes
+        DIFF=0
+        
+        for file in `ls .legit/index`
+        do
+            
+            # If that file is not in latest version
+            if [ ! -f  .legit/version-$currentVer/$file ]
+            then
+                DIFF=$((DIFF+1))
+                continue
+            fi 
+            
+            # diff=1 -> Files are different
+            # diff=0 -> Files are the same
+            diff=`diff -q .legit/index/$file .legit/version-$currentVer/$file | wc -l`
+            if [ "$DIFF" -eq "0" ] && [ "$diff" -eq "1" ]
+            then
+                DIFF=$((DIFF+1))
+                continue
+            fi
+            
+        done
+        
+        # If there is no difference in any file, terminate early
+        if [ "$DIFF" -eq "0" ]
+        then
+            echo "nothing to commit"
+            exit 1
+        fi
+        
+    fi
+    
+fi
+
+# Append message to log
+if [ "$#" -eq "3" ]
+then
+    echo "$newVersion $3" >> .legit/log
+else
+    echo "$newVersion $2" >> .legit/log
+fi
+
+# Make new directory
+mkdir ".legit/version-$newVersion"
+
+# Commit all files in index to new directory
+for file in `ls .legit/index`
+do
+    cp ".legit/index/$file" ".legit/version-$newVersion/$file"
+done
+# Branch Managment
+wc=`cat .legit/status | wc -l`
+if [ "$wc" -eq "0" ]
+then
+    echo "master-$newVersion=Current" >> .legit/status
+else
+    latest=`grep -F "Current" .legit/status | cut -d '-' -f 1`
+    if [ ! "$latest" = "master" ]
+    then
+        for file in `ls .legit/index`
+        do
+            cp ".legit/index/$file" ".legit/$latest/$file"
+        done
+    fi
+fi
+
+sed -i "s/[0-9]=Current/$newVersion=Current/g" ".legit/status"
+
+# Report to user
+echo "Committed as commit $newVersion"

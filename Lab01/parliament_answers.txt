@@ -71,3 +71,4 @@ It should print this first name and only this first name.
 
 Q10 answer: sed "s/Dr \|Mrs \|Mr \|Hon \|Ms //g" parliament.txt | cut -f1 -d" " | sort | uniq -c | sort -nr | head -2 | tail -1 | cut -c 9-
 
+

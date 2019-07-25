@@ -1,0 +1,48 @@
+#!/bin/dash
+
+# Check if directory exists
+if [ ! -d ".legit" ]
+then
+    echo "legit-add: error: no .legit directory containing legit repository exists"
+    exit 1
+fi
+
+# Check if all files exists in either working or index directory
+for file in "$@"
+do
+
+    var1=$(echo $file | grep "^[a-zA-Z0-9]" | wc -l)
+    
+    if [ "$var1" -eq "0" ]
+    then
+        echo "legit-add: error: can only start with letter or number";
+        exit 1
+    fi
+
+    # If file doesn't exist in either working or index, terminate early
+    if [ ! -f $file ] && [ ! -f .legit/index/$file ]
+    then
+        echo "legit-add: error: can not open '$file'"
+        exit 1
+    fi
+
+done
+
+# If all good, copy them all
+for file in "$@"
+do
+
+    # If file exists in index, delete it
+    if [ -f .legit/index/$file ]
+    then
+        rm .legit/index/$file
+    fi
+    
+    # Copy file from working to index directory
+    if [ -f $file ]
+    then
+        cp "$file" ".legit/index/$file"
+    fi
+    
+done
+
